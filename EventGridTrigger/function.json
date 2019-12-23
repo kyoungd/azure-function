@@ -1,0 +1,17 @@
+{
+  "bindings": [
+    {
+      "type": "eventGridTrigger",
+      "name": "eventGridEvent",
+      "direction": "in"
+    },
+    {
+      "type": "cosmosDB",
+      "direction": "in",
+      "name": "connectionDb",
+      "databaseName": "sylolivedb",
+      "collectionName": "normal_reading",
+      "connectionStringSetting": "sylolive-database_DOCUMENTDB"
+    }
+  ]
+}
