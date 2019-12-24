@@ -95,12 +95,6 @@ function dateStringOnly(date) {
   return format;
 }
 
-function todayMinus(daysBefore) {
-  var d = new Date(); // Today!
-  d.setDate(d.getDate() - daysBefore); // Yesterday!
-  return d;
-}
-
 /**
  * Delete the item by ID.
  */
@@ -132,6 +126,66 @@ function exit(message) {
   process.stdin.on("data", process.exit.bind(process, 0));
 }
 
+/**
+ * Query the container using SQL
+ */
+async function queryContainer(querySpec) {
+  console.log(`Querying container:\n${config.container.id}`);
+
+  const { resources: results } = await client
+    .database(databaseId)
+    .container(containerId)
+    .items.query(querySpec)
+    .fetchAll();
+  // DEBUG
+  // for (var queryResult of results) {
+  //   let resultString = JSON.stringify(queryResult)
+  //   console.log(`\tQuery returned ${resultString}\n`)
+  // }
+  return results;
+}
+
+/**
+ * ------------------------------------------------------------------------------------------------------
+ * QUERY DEPENDS ON THE TASK
+ * ------------------------------------------------------------------------------------------------------
+ */
+
+async function queryContainerDailyAggregate(deviceId) {
+  // query to return all children in a family
+  const querySpec = {
+    query: "SELECT * FROM c WHERE c.deviceId = @deviceId",
+    parameters: [
+      {
+        name: "@deviceId",
+        value: deviceId
+      }
+    ]
+  };
+
+  const results = await queryContainer(querySpec);
+  return results;
+}
+
+/**
+ * Query the container using SQL
+ */
+async function queryContainerDailyData(oneDate) {
+  // query to return all children in a family
+  const querySpec = {
+    query: "SELECT * FROM r WHERE STARTSWITH(r.compositeKey, @dateString)",
+    parameters: [
+      {
+        name: "@dateString",
+        value: dateStringOnly(oneDate)
+      }
+    ]
+  };
+
+  const results = await queryContainer(querySpec);
+  return results;
+}
+
 module.exports = {
   createDatabase,
   readDatabase,
@@ -140,5 +194,7 @@ module.exports = {
   createFamilyItem,
   deleteFamilyItem,
   cleanup,
-  exit
+  exit,
+  queryContainerDailyAggregate,
+  queryContainerDailyData
 };
