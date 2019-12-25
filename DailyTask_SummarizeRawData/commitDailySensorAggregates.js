@@ -1,12 +1,13 @@
 //@ts-check
 const {
-  readDatabase,
-  readContainer,
   createFamilyItem,
-  queryContainerDailyAggregate
-} = require("./db");
-const url = require("url");
+  replaceFamilyItem,
+  queryContainer
+} = require("./cosmos");
 const _ = require("lodash");
+
+const containerId = "daily_telemetry";
+const partitionKey = { kind: "Hash", paths: ["/deviceId"] };
 
 const dailyAggregates = [
   {
@@ -61,30 +62,42 @@ function updateDailyTelemetry(item, telemetry) {
   return item;
 }
 
+async function queryContainerDailyAggregate(deviceId) {
+  // query to return all children in a family
+  const querySpec = {
+    query: "SELECT * FROM c WHERE c.deviceId = @deviceId",
+    parameters: [
+      {
+        name: "@deviceId",
+        value: deviceId
+      }
+    ]
+  };
+  const results = await queryContainer(containerId, querySpec);
+  return results;
+}
+
 function commitDailySensorAggregates(dailyDataset) {
   const promises = [];
-  readDatabase()
-    .then(() => readContainer())
-    .then(() => {
-      console.log("query daily aggregate container");
-      console.log(JSON.stringify(dailyDataset, null, 4));
+  console.log("query daily aggregate container");
+  console.log(JSON.stringify(dailyDataset, null, 4));
 
-      _.forEach(dailyDataset, dataset => {
-        // query to return all children in a family
-        queryContainerDailyAggregate(dataset.deviceId).then(queryResults => {
-          const item =
-            queryResults == undefined || queryResults.length == 0
-              ? newDailyTelemetry(dataset.deviceId, dataset)
-              : updateDailyTelemetry(queryResults[0], dataset);
-          promises.push(createFamilyItem(item));
-        });
-      });
-      Promise.all(promises)
-        .then(() => console.log(`Completed successfully`))
-        .catch(error =>
-          console.log(`Completed with error ${JSON.stringify(error)}`)
-        );
-    })
+  _.forEach(dailyDataset, dataset => {
+    // query to return all children in a family
+    queryContainerDailyAggregate(dataset.deviceId).then(queryResults => {
+      const isNewItem = queryResults == undefined || queryResults.length == 0;
+      const item = isNewItem
+        ? newDailyTelemetry(dataset.deviceId, dataset)
+        : updateDailyTelemetry(queryResults[0], dataset);
+      promises.push(
+        isNewItem
+          ? createFamilyItem(containerId, item)
+          : replaceFamilyItem(containerId, item, "deviceId")
+      );
+    });
+  });
+  Promise.all(promises)
+    .then(() => console.log(`Completed successfully`))
     .catch(error =>
       console.log(`Completed with error ${JSON.stringify(error)}`)
     );

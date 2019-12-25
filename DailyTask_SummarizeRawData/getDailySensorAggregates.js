@@ -1,11 +1,10 @@
 //@ts-check
-const {
-  readDatabase,
-  readContainer,
-  queryContainerDailyData
-} = require("./db");
+const { queryContainer } = require("./cosmos");
 const url = require("url");
 const _ = require("lodash");
+
+const containerId = "normal_reading";
+const partitionKey = { kind: "Hash", paths: ["/compositeKey"] };
 
 function todayMinus(daysBefore) {
   var d = new Date(); // Today!
@@ -13,12 +12,13 @@ function todayMinus(daysBefore) {
   return d;
 }
 
-function dailyReadingAggregate(readings) {
+function dailyReadingAggregate(readings, eventDate) {
   const scores = _.groupBy(readings, reading => reading.deviceId);
-
+  const eventDateOnly = dateStringOnly(eventDate);
   const scoreGroup = _.map(scores, (user, index) => {
     return {
       deviceId: user[0].deviceId,
+      eventDateOnly,
       count: user.length,
       temperature: _.reduce(
         user,
@@ -55,15 +55,45 @@ function dailyReadingAggregate(readings) {
   return scoreGroup;
 }
 
+function dateStringOnly(date) {
+  let format = "yyyyMMdd";
+
+  var month = date.getMonth() + 1;
+  var year = date.getFullYear();
+  var day = date.getDate();
+
+  var MM = "";
+  if (month >= 10) MM = month.toString();
+  else MM = "0" + month.toString();
+  format = format.replace("MM", MM);
+  format = format.replace("yyyy", year.toString());
+  var dd = "";
+  if (day >= 10) dd = day.toString();
+  else dd = "0" + day.toString();
+  format = format.replace("dd", dd);
+  return format;
+}
+
+async function queryContainerDailyData(oneDate) {
+  // query to return all children in a family
+  const querySpec = {
+    query: "SELECT * FROM r WHERE STARTSWITH(r.compositeKey, @dateString)",
+    parameters: [
+      {
+        name: "@dateString",
+        value: dateStringOnly(oneDate)
+      }
+    ]
+  };
+
+  const results = await queryContainer(containerId, querySpec);
+  return results;
+}
+
 async function getDailySensorAggregates() {
-  try {
-    await readDatabase();
-    await readContainer();
-    const dataset = await queryContainerDailyData(todayMinus(0));
-    return dailyReadingAggregate(dataset);
-  } catch (error) {
-    return [];
-  }
+  const oneDate = todayMinus(0);
+  const dataset = await queryContainerDailyData(oneDate);
+  return dailyReadingAggregate(dataset, oneDate);
 }
 
 module.exports = getDailySensorAggregates;
