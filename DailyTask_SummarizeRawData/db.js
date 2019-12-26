@@ -2,20 +2,14 @@
 const CosmosClient = require("@azure/cosmos").CosmosClient;
 
 var config = {};
-// config.endpoint = 'https://sylolive-database.documents.azure.com:443/'
-// config.key = 'uKgjrosDt4pSAwUp2T88QYGDDflpiTWIhdjYZaUBzEf7xMLkf2vLH7W6FitmlE6LKJ5EWirivVuExV1WFA2pNg=='
 config.database = {
   id: "sylolivedb"
-};
-config.container = {
-  id: "daily_telemetry"
 };
 
 const endpoint = config.endpoint;
 const key = config.key;
 
 const databaseId = config.database.id;
-const containerId = config.container.id;
 const partitionKey = { kind: "Hash", paths: ["/compositeKey"] };
 
 const connectionString = process.env["sylolive-database_DOCUMENTDB"];
@@ -44,7 +38,7 @@ async function readDatabase() {
 /**
  * Create the container if it does not exist
  */
-async function createContainer() {
+async function createContainer(containerId) {
   const { container } = await client
     .database(databaseId)
     .containers.createIfNotExists(
@@ -57,7 +51,7 @@ async function createContainer() {
 /**
  * Read the container definition
  */
-async function readContainer() {
+async function readContainer(containerId) {
   const { resource: containerDefinition } = await client
     .database(databaseId)
     .container(containerId)
@@ -68,7 +62,7 @@ async function readContainer() {
 /**
  * Create family item if it does not exist
  */
-async function createFamilyItem(itemBody) {
+async function createFamilyItem(containerId, itemBody) {
   const { item } = await client
     .database(databaseId)
     .container(containerId)
@@ -96,9 +90,22 @@ function dateStringOnly(date) {
 }
 
 /**
+ * Replace the item by ID.
+ */
+async function replaceFamilyItem(containerId, itemBody, primaryKey) {
+  console.log(`Replacing item:\n${itemBody.id}\n`);
+  const { item } = await client
+    .database(databaseId)
+    .container(containerId)
+    .item(itemBody.id, itemBody[primaryKey])
+    .replace(itemBody);
+  return item;
+}
+
+/**
  * Delete the item by ID.
  */
-async function deleteFamilyItem(itemBody) {
+async function deleteFamilyItem(containerId, itemBody) {
   await client
     .database(databaseId)
     .container(containerId)
@@ -129,7 +136,7 @@ function exit(message) {
 /**
  * Query the container using SQL
  */
-async function queryContainer(querySpec) {
+async function queryContainer(containerId, querySpec) {
   console.log(`Querying container:\n${config.container.id}`);
 
   const { resources: results } = await client
@@ -145,56 +152,14 @@ async function queryContainer(querySpec) {
   return results;
 }
 
-/**
- * ------------------------------------------------------------------------------------------------------
- * QUERY DEPENDS ON THE TASK
- * ------------------------------------------------------------------------------------------------------
- */
-
-async function queryContainerDailyAggregate(deviceId) {
-  // query to return all children in a family
-  const querySpec = {
-    query: "SELECT * FROM c WHERE c.deviceId = @deviceId",
-    parameters: [
-      {
-        name: "@deviceId",
-        value: deviceId
-      }
-    ]
-  };
-
-  const results = await queryContainer(querySpec);
-  return results;
-}
-
-/**
- * Query the container using SQL
- */
-async function queryContainerDailyData(oneDate) {
-  // query to return all children in a family
-  const querySpec = {
-    query: "SELECT * FROM r WHERE STARTSWITH(r.compositeKey, @dateString)",
-    parameters: [
-      {
-        name: "@dateString",
-        value: dateStringOnly(oneDate)
-      }
-    ]
-  };
-
-  const results = await queryContainer(querySpec);
-  return results;
-}
-
 module.exports = {
   createDatabase,
   readDatabase,
   createContainer,
   readContainer,
+  replaceFamilyItem,
   createFamilyItem,
   deleteFamilyItem,
   cleanup,
-  exit,
-  queryContainerDailyAggregate,
-  queryContainerDailyData
+  exit
 };
