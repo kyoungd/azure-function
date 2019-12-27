@@ -1,5 +1,5 @@
 //@ts-check
-const { queryContainer } = require("./cosmos");
+const { queryContainer } = require("../common/cosmos");
 const url = require("url");
 const _ = require("lodash");
 

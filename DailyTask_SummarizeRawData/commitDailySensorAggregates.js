@@ -3,44 +3,11 @@ const {
   createFamilyItem,
   replaceFamilyItem,
   queryContainer
-} = require("./cosmos");
+} = require("../common/cosmos");
 const _ = require("lodash");
 
 const containerId = "daily_telemetry";
 const partitionKey = { kind: "Hash", paths: ["/deviceId"] };
-
-const dailyAggregates = [
-  {
-    deviceId: "Web-Clinet-5a",
-    eventDateOnly: "20191102",
-    temperature: 98.1,
-    bpm: 82,
-    systolic: 121,
-    diastolic: 81,
-    bloodoxygen: 98,
-    bloodsugar: 92
-  },
-  {
-    deviceId: "Web-Clinet-6a",
-    eventDateOnly: "20191102",
-    temperature: 98.1,
-    bpm: 82,
-    systolic: 121,
-    diastolic: 81,
-    bloodoxygen: 98,
-    bloodsugar: 92
-  },
-  {
-    deviceId: "Web-Clinet-7a",
-    eventDateOnly: "20191102",
-    temperature: 98.1,
-    bpm: 82,
-    systolic: 121,
-    diastolic: 81,
-    bloodoxygen: 98,
-    bloodsugar: 92
-  }
-];
 
 function newDailyTelemetry(deviceId, telemetry) {
   const item = {

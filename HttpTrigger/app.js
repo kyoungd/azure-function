@@ -154,7 +154,13 @@ function runTest() {
     .then(() => queryContainer())
     .then(() => replaceFamilyItem(config.items.Andersen))
     .then(() => queryContainer())
-    .then(() => deleteFamilyItem(config.items.Andersen))
+    .then(() => {
+      const item = {
+        id: "Anderson.1",
+        Country: "France"
+      };
+      createFamilyItem(item);
+    })
     .then(() => {
       exit(`Completed successfully`);
     })

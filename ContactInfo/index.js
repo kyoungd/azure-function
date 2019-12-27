@@ -1,10 +1,11 @@
 const {
-  readDatabase,
-  readContainer,
   queryContainer,
   replaceFamilyItem,
   createFamilyItem
-} = require("./db");
+} = require("../common/cosmos");
+
+const containerId = "daily_telemetry";
+const partitionKey = { kind: "Hash", paths: ["/deviceId"] };
 
 function getQuery(deviceId) {
   const querySpec = {
@@ -22,18 +23,16 @@ function getQuery(deviceId) {
 
 async function deviceExists(device) {
   const deviceId = req.query.deviceId;
-  const dataset = await queryContainer(getQuery(deviceId));
+  const dataset = await queryContainer(containerId, getQuery(deviceId));
   return Array.isArray(dataset) && dataset.legnth;
 }
 
 module.exports = async function(context, req) {
   context.log("JavaScript HTTP trigger function processed a request.");
   try {
-    await readDatabase();
-    await readContainer();
     if (req.method === "GET") {
       const deviceId = req.query.deviceId;
-      const dataset = await queryContainer(getQuery(deviceId));
+      const dataset = await queryContainer(containerId, getQuery(deviceId));
       context.res = {
         status: 200 /* Defaults to 200 */,
         body: dataset
@@ -41,8 +40,9 @@ module.exports = async function(context, req) {
     } else if (req.method === "POST") {
       const device = req.body;
       const isKnownDevice = deviceExists(device);
-      if (isKnownDevice) await replaceFamilyItem(device);
-      else await createFamilyItem(device);
+      if (isKnownDevice)
+        await replaceFamilyItem(containerId, device, "deviceId");
+      else await createFamilyItem(containerId, device);
       context.res = {
         status: 200 /* Defaults to 200 */,
         body: device
