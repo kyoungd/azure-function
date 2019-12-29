@@ -4,48 +4,93 @@ const {
   createFamilyItem
 } = require("../common/cosmos");
 
-const containerId = "daily_telemetry";
-const partitionKey = { kind: "Hash", paths: ["/deviceId"] };
-
-function getQuery(deviceId) {
-  const querySpec = {
-    query:
-      "SELECT c.deviceId, c.id, c.version, c.contact, c.alert FROM c WHERE c.deviceId = @deviceId",
-    parameters: [
-      {
-        name: "@deviceId",
-        value: deviceId
-      }
-    ]
-  };
-  return querySpec;
+class DbContext {
+  constructor(containerId, mainKey) {
+    this.containerId = containerId;
+    this.mainKey = mainKey;
+    this.partitionKey = mainKey;
+  }
+  get containerId() {
+    return this._containerId;
+  }
+  set containerId(value) {
+    this._containerId = value;
+  }
+  get partitionKey() {
+    return this._partitionKey;
+  }
+  set partitionKey(value) {
+    this._partitionKey = { kind: "Hash", paths: ["/" + value] };
+  }
+  get mainKey() {
+    return this._mainKey;
+  }
+  set mainKey(value) {
+    this._mainKey = value;
+  }
 }
 
-async function deviceExists(device) {
-  const deviceId = req.query.deviceId;
-  const dataset = await queryContainer(containerId, getQuery(deviceId));
+class DailyTelemtry extends DbContext {
+  getQuery(deviceId) {
+    const querySpec = {
+      query: "SELECT * FROM c WHERE c.deviceId = @deviceId",
+      parameters: [
+        {
+          name: "@deviceId",
+          value: deviceId
+        }
+      ]
+    };
+    return querySpec;
+  }
+}
+
+class CareTaker extends DbContext {
+  getQuery(careTakerId) {
+    const querySpec = {
+      query: "SELECT * FROM c WHERE c.careTakerId = @careTakerId",
+      parameters: [
+        {
+          name: "@careTakerId",
+          value: careTakerId
+        }
+      ]
+    };
+    return querySpec;
+  }
+}
+
+async function isDataBlockExists(ctx, pid) {
+  const dataset = await queryContainer(ctx.containerId, ctx.getQuery(pid));
   return Array.isArray(dataset) && dataset.legnth;
 }
 
 module.exports = async function(context, req) {
   context.log("JavaScript HTTP trigger function processed a request.");
   try {
+    const key = req.body.key;
+    const ctx =
+      key.container === "telemetry"
+        ? new DailyTelemtry("daily_telemetry", "deviceId")
+        : new CareTaker("care_taker", "careTakerId");
     if (req.method === "GET") {
-      const deviceId = req.query.deviceId;
-      const dataset = await queryContainer(containerId, getQuery(deviceId));
+      const dataset = await queryContainer(
+        ctx.containerId,
+        ctx.getQuery(key.pid)
+      );
       context.res = {
         status: 200 /* Defaults to 200 */,
         body: dataset
       };
     } else if (req.method === "POST") {
-      const device = req.body;
-      const isKnownDevice = deviceExists(device);
+      const dataBlock = req.body.value;
+      const isKnownDevice = isDataBlockExists(ctx, key.pid);
       if (isKnownDevice)
-        await replaceFamilyItem(containerId, device, "deviceId");
-      else await createFamilyItem(containerId, device);
+        await replaceFamilyItem(ctx.containerId, dataBlock, ctx.mainKey);
+      else await createFamilyItem(ctx.containerId, dataBlock);
       context.res = {
         status: 200 /* Defaults to 200 */,
-        body: device
+        body: dataBlock
       };
     }
   } catch (e) {
