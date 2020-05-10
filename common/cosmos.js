@@ -3,7 +3,7 @@ const CosmosClient = require("@azure/cosmos").CosmosClient;
 
 var config = {};
 config.database = {
-  id: "sylolivedb"
+  id: "sylolivedb",
 };
 
 const databaseId = config.database.id;
@@ -15,7 +15,7 @@ const client = new CosmosClient(connectionString);
  */
 async function createDatabase() {
   const { database } = await client.databases.createIfNotExists({
-    id: databaseId
+    id: databaseId,
   });
   console.log(`Created database:\n${database.id}\n`);
 }
@@ -138,5 +138,5 @@ module.exports = {
   deleteFamilyItem,
   cleanup,
   exit,
-  queryContainer
+  queryContainer,
 };

@@ -7,10 +7,10 @@ var config = {};
 // config.endpoint = 'https://sylolive-database.documents.azure.com:443/'
 // config.key = 'uKgjrosDt4pSAwUp2T88QYGDDflpiTWIhdjYZaUBzEf7xMLkf2vLH7W6FitmlE6LKJ5EWirivVuExV1WFA2pNg=='
 config.database = {
-  id: "sylolivedb"
+  id: "sylolivedb",
 };
 config.container = {
-  id: "normal_reading"
+  id: "normal_reading",
 };
 
 const endpoint = config.endpoint;
@@ -30,7 +30,7 @@ const analyzeSampleDaySize = parseInt(process.env["AnalyzeSampleDaySize"], 10);
  */
 async function createDatabase() {
   const { database } = await client.databases.createIfNotExists({
-    id: databaseId
+    id: databaseId,
   });
   console.log(`Created database:\n${database.id}\n`);
 }
@@ -117,13 +117,13 @@ async function queryContainer(selectQuery, startDate, endDate) {
     parameters: [
       {
         name: "@startDate",
-        value: dateStringOnly(startDate)
+        value: dateStringOnly(startDate),
       },
       {
         name: "@endDate",
-        value: dateStringOnly(endDate)
-      }
-    ]
+        value: dateStringOnly(endDate),
+      },
+    ],
   };
 
   const { resources: results } = await client
@@ -147,13 +147,13 @@ const testDataset = [
       {
         name: "Young K",
         email: "kyoungd@yahoo.com",
-        isEmail: true
+        isEmail: true,
       },
       {
         name: "Gum K",
         email: "kyoungd@aol.com",
-        isEmail: true
-      }
+        isEmail: true,
+      },
     ],
     alert: {
       teperature_max: 105,
@@ -173,7 +173,7 @@ const testDataset = [
       bloodoxygen_change: 5,
       bloodsugar_max: 0,
       bloodsugar_min: 0,
-      bloodsugar_change: 0
+      bloodsugar_change: 0,
     },
     sumdata: [
       {
@@ -182,7 +182,7 @@ const testDataset = [
         temperature: 491.705169124205,
         systolic: 2164.0690425288008,
         diastolic: 1499.0690425288008,
-        bloodoxygen: 1955.0690425288008
+        bloodoxygen: 1955.0690425288008,
       },
       {
         eventDateOnly: "20191113",
@@ -190,7 +190,7 @@ const testDataset = [
         temperature: 824.8505617228809,
         systolic: 3551.974292846276,
         diastolic: 2466.974292846277,
-        bloodoxygen: 3210.974292846276
+        bloodoxygen: 3210.974292846276,
       },
       {
         eventDateOnly: "20191114",
@@ -198,9 +198,9 @@ const testDataset = [
         temperature: 203.58572588586676,
         systolic: 932.2048100044924,
         diastolic: 652.2048100044924,
-        bloodoxygen: 844.2048100044924
-      }
-    ]
+        bloodoxygen: 844.2048100044924,
+      },
+    ],
   },
   {
     id: "Web-Client-2",
@@ -208,13 +208,13 @@ const testDataset = [
       {
         name: "Young K",
         email: "kyoungd@yahoo.com",
-        isEmail: true
+        isEmail: true,
       },
       {
         name: "Gum K",
         email: "kyoungd@aol.com",
-        isEmail: true
-      }
+        isEmail: true,
+      },
     ],
     alert: {
       teperature_max: 105,
@@ -234,7 +234,7 @@ const testDataset = [
       bloodoxygen_change: 5,
       bloodsugar_max: 0,
       bloodsugar_min: 0,
-      bloodsugar_change: 0
+      bloodsugar_change: 0,
     },
     sumdata: [
       {
@@ -243,7 +243,7 @@ const testDataset = [
         temperature: 718.5500604044414,
         systolic: 3062.0874884488917,
         diastolic: 2117.0874884488917,
-        bloodoxygen: 2765.0874884488917
+        bloodoxygen: 2765.0874884488917,
       },
       {
         eventDateOnly: "20191113",
@@ -251,7 +251,7 @@ const testDataset = [
         temperature: 751.2778483968144,
         systolic: 3586.785614396826,
         diastolic: 2501.785614396826,
-        bloodoxygen: 3245.785614396826
+        bloodoxygen: 3245.785614396826,
       },
       {
         eventDateOnly: "20191114",
@@ -259,41 +259,41 @@ const testDataset = [
         temperature: 330.7476058342947,
         systolic: 1512.0679222856872,
         diastolic: 1057.0679222856875,
-        bloodoxygen: 1369.0679222856872
-      }
-    ]
-  }
+        bloodoxygen: 1369.0679222856872,
+      },
+    ],
+  },
 ];
 
 function setNotification(dataset) {
   let notificationList = [];
-  dataset.forEach(data => {
+  dataset.forEach((data) => {
     const sumdata = data.sumdata;
     const alert = data.alert;
     const contact = data.contact;
     // ignore if not 3 days straight.
     if (sumdata.length != analyzeSampleDaySize) return;
-    const mySumdata = _.sortBy(sumdata, o => o.eventDateOnly);
+    const mySumdata = _.sortBy(sumdata, (o) => o.eventDateOnly);
     const maxResult = setMaxNotification(mySumdata, alert);
     if (maxResult != "OK")
       notificationList.push({
         StatusCode: 500,
         Message: maxResult,
-        Contacts: contact
+        Contacts: contact,
       });
     const minResult = setMMinNotification(mySumdata, alert);
     if (minResult != "OK")
       notificationList.push({
         StatusCode: 500,
         Message: minResult,
-        Contacts: contact
+        Contacts: contact,
       });
     const changeResult = setChangeNotification(mySumdata, alert);
     if (changeResult != "OK")
       notificationList.push({
         StatusCode: 500,
         Message: changeResult,
-        Contacts: contact
+        Contacts: contact,
       });
   });
   return notificationList;
@@ -301,9 +301,9 @@ function setNotification(dataset) {
 
 function setMaxNotification(sumdata, alert) {
   const keys = Object.keys(alert);
-  const mappedKeys = keys.filter(key => key.includes("_max"));
-  sumdata.forEach(onedata => {
-    mappedKeys.forEach(key => {
+  const mappedKeys = keys.filter((key) => key.includes("_max"));
+  sumdata.forEach((onedata) => {
+    mappedKeys.forEach((key) => {
       const keyless = key.replace("_max", "");
       if (alert[key] != 0 && alert[key] > onedata[keyless]) return key;
     });
@@ -313,9 +313,9 @@ function setMaxNotification(sumdata, alert) {
 
 function setMMinNotification(sumdata, alert) {
   const keys = Object.keys(alert);
-  const mappedKeys = keys.filter(key => key.includes("_min"));
-  sumdata.forEach(onedata => {
-    mappedKeys.forEach(key => {
+  const mappedKeys = keys.filter((key) => key.includes("_min"));
+  sumdata.forEach((onedata) => {
+    mappedKeys.forEach((key) => {
       const keyless = key.replace("_min", "");
       if (alert[key] != 0 && alert[key] < onedata[keyless]) return key;
     });
@@ -325,23 +325,23 @@ function setMMinNotification(sumdata, alert) {
 
 function setChangeNotification(sumdata, alert) {
   const keys = Object.keys(alert);
-  const mappedKeys = keys.filter(key => key.includes("_change"));
-  mappedKeys.forEach(key => {
+  const mappedKeys = keys.filter((key) => key.includes("_change"));
+  let returnCodes = {};
+  mappedKeys.forEach((key) => {
     const keyless = key.replace("_change", "");
-    const sumMessage = _.reduce(
-      sumdata,
-      (totals, user, index, sumdata) => {
-        const dataone = user;
-        const dataminus =
-          sumdata[index - 1] === undefined ? user : sumdata[index - 1];
-        const itemChange = dataone[keyless] - dataminus[keyless];
-        if (itemChange > alert[key] || itemChange < alert[key]) return key;
-        return totals;
-      },
-      ""
-    );
+    sumdata.forEach((item, index) => {
+      const dataone = item;
+      const dataminus =
+        sumdata[index - 1] === undefined ? item : sumdata[index - 1];
+      const itemChange = dataone[keyless] - dataminus[keyless];
+      if (itemChange > alert[key] || itemChange < alert[key])
+        returnCodes.push(key);
+    });
   });
-  return "OK";
+  const compressedCode = returnCodes.reduce((total, item) => {
+    total = total + (total.length > 0 ? ", " : "") + item;
+  }, "");
+  return compressedCode;
 }
 
 async function healthAnalysis() {
