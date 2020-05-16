@@ -1,0 +1,30 @@
+{
+    "temperature": [
+        {
+            "temperature_range": "Patient's temperature has peaked outside of healthy range.  Please verify the chart."
+        }
+    ],
+    "heartRate": [
+        {
+            "heart_rate_range": "Patient's heart rate has peaked outside of healthy range.  Please verify the chart."
+        }
+    ],
+    "bloodPressure": [
+        {
+            "bp_sytolic_range": "Patient's sytolic blood pressure has peaked outside of healthy range.  Please verify the chart."
+        },
+        {
+            "bp_diastolic_range": "Patient's diastolic blood pressure has peaked outside of healthy range.  Please verify the chart."
+        }
+    ],
+    "bloodOxygen": [
+        {
+            "blood_oxygen_range": "Patient's blood oxygen has peaked outside of healthy range.  Please verify the chart."
+        }
+    ],
+    "bloodSugar": [
+        {
+            "blood_sugar_range": "Patient's blood sugar has peaked outside of healthy range.  Please verify the chart."
+        }
+    ]
+}
