@@ -17,6 +17,26 @@ function isEmpty(obj) {
   return true;
 }
 
+function dateStringOnly(date) {
+  let format = "yyyyMMdd";
+
+  var month = date.getMonth() + 1;
+  var year = date.getFullYear();
+  var day = date.getDate();
+
+  var MM = "";
+  if (month >= 10) MM = month.toString();
+  else MM = "0" + month.toString();
+  format = format.replace("MM", MM);
+  format = format.replace("yyyy", year.toString());
+  var dd = "";
+  if (day >= 10) dd = day.toString();
+  else dd = "0" + day.toString();
+  format = format.replace("dd", dd);
+  return format;
+}
+
 module.exports = {
   isEmpty,
+  dateStringOnly,
 };
